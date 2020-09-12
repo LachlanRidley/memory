@@ -13,71 +13,79 @@ public class ClickSquare : MonoBehaviour
     private SpriteRenderer m_SpriteRenderer;
     private Transform m_Transform;
 
-    private int m_FlipStage = 0;
-    private bool m_ToldPairChecker = false;
+    private float m_FullWidth;
+
+    public CardState m_CardState = CardState.hidden;
+    public bool destroyOnReveal = false;
+
+    public float flipSpeed = 1f;
+
+    public enum CardState
+    {
+        hidden, showing1, showing2, shown, hiding1, hiding2
+    }
 
     void Start()
     {
         m_SpriteRenderer = GetComponent<SpriteRenderer>();
         m_Transform = GetComponent<Transform>();
+
+        m_FullWidth = m_Transform.localScale.x;
     }
 
     void Update()
     {
-        if (m_FlipStage == 1 && m_Transform.localScale.x > 0f)
+        if (m_CardState == CardState.showing1 && m_Transform.localScale.x <= 0f)
         {
-            m_Transform.localScale -= new Vector3(0.08f, 0f);
-        }
-        else if (m_FlipStage == 1 && m_Transform.localScale.x <= 0f)
-        {
-            m_FlipStage = 2;
             m_SpriteRenderer.sprite = cardTexture;
+            m_CardState = CardState.showing2;
         }
-        else if (m_FlipStage == 2 && m_Transform.localScale.x < 2f)
+        else if (m_CardState == CardState.showing2 && m_Transform.localScale.x >= m_FullWidth)
         {
-            m_Transform.localScale += new Vector3(0.08f, 0f);
+            m_CardState = CardState.shown;
         }
-        else if (m_FlipStage == 2 && m_Transform.localScale.x >= 2f && !m_ToldPairChecker)
+        else if (m_CardState == CardState.showing2)
         {
-            pairChecker.SelectCard(this);
-            m_ToldPairChecker = true;
+            m_Transform.localScale += new Vector3(flipSpeed, 0f);
         }
-        else if (m_FlipStage == 3 && m_Transform.localScale.x > 0f)
+        else if (m_CardState == CardState.showing1)
         {
-            m_Transform.localScale -= new Vector3(0.08f, 0f);
+            m_Transform.localScale -= new Vector3(flipSpeed, 0f);
         }
-        else if (m_FlipStage == 3 && m_Transform.localScale.x <= 0f)
+
+        else if (m_CardState == CardState.hiding1 && m_Transform.localScale.x <= 0f)
         {
-            m_FlipStage = 4;
             m_SpriteRenderer.sprite = backTexture;
+            m_CardState = CardState.hiding2;
         }
-        else if (m_FlipStage == 4 && m_Transform.localScale.x < 2f)
+        else if (m_CardState == CardState.hiding2 && m_Transform.localScale.x >= m_FullWidth)
         {
-            m_Transform.localScale += new Vector3(0.08f, 0f);
+            m_CardState = CardState.hidden;
         }
-        else if (m_FlipStage == 4 && m_Transform.localScale.x >= 2f)
+        else if (m_CardState == CardState.hiding2)
         {
-            m_FlipStage = 0;
+            m_Transform.localScale += new Vector3(flipSpeed, 0f);
+        }
+        else if (m_CardState == CardState.hiding1)
+        {
+            m_Transform.localScale -= new Vector3(flipSpeed, 0f);
         }
     }
 
     public void FlipBack()
     {
-        if (m_FlipStage == 2)
+        if (m_CardState == CardState.shown)
         {
-            m_FlipStage = 3;
-            m_ToldPairChecker = false;
+            m_CardState = CardState.hiding1;
         }
     }
+
     void OnMouseDown()
     {
-        if (m_FlipStage == 0)
+        if (m_CardState == CardState.hidden)
         {
-            m_FlipStage = 1;
-        } else if (m_FlipStage == 2)
-        {
-            FlipBack();
+            m_CardState = CardState.showing1;
+            pairChecker.SelectCard(this);
         }
-        
     }
 }
